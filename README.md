@@ -34,7 +34,7 @@ Prima di avviare il progetto è necessario avere installato:
 Clonare il progetto:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/NotAlex575/ecommerce-backoffice
 cd nome-progetto
 
 Installare le dipendenze PHP:
@@ -49,23 +49,79 @@ Creare il file .env:
 
 cp .env.example .env
 
-Generare la chiave applicativa:
+Configurare il file .env con il seguente:
 
-php artisan key:generate
-Configurazione
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=base64:zT6FaH2AS88+yHYFD9hpARZyf06HCCEm5lGRYQRXZWw=
+APP_DEBUG=true
+APP_TIMEZONE=UTC
+APP_URL=http://localhost
 
-Configurare il database nel file .env:
+APP_LOCALE=en
+APP_FALLBACK_LOCALE=en
+APP_FAKER_LOCALE=en_US
 
-DB_DATABASE=nome_database
+APP_MAINTENANCE_DRIVER=file
+APP_MAINTENANCE_STORE=database
+
+BCRYPT_ROUNDS=12
+
+LOG_CHANNEL=stack
+LOG_STACK=single
+LOG_DEPRECATIONS_CHANNEL=null
+LOG_LEVEL=debug
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3307
+DB_DATABASE=laravel_gestionale
 DB_USERNAME=root
 DB_PASSWORD=
+DB_COLLATION = utf8mb4_unicode_ci
 
-Configurare le API WooCommerce:
+SESSION_DRIVER=database
+SESSION_LIFETIME=120
+SESSION_ENCRYPT=false
+SESSION_PATH=/
+SESSION_DOMAIN=null
 
-WC_CONSUMER_KEY=ck_xxxxxxxxx
-WC_CONSUMER_SECRET=cs_xxxxxxxxx
-WC_BASE_URL=http://localhost/wordpress
-Database
+BROADCAST_CONNECTION=log
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=database
+
+CACHE_STORE=database
+CACHE_PREFIX=
+
+MEMCACHED_HOST=127.0.0.1
+
+REDIS_CLIENT=phpredis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+MAIL_MAILER=log
+MAIL_HOST=127.0.0.1
+MAIL_PORT=2525
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
+
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+AWS_USE_PATH_STYLE_ENDPOINT=false
+
+VITE_APP_NAME="${APP_NAME}"
+
+
+WC_CONSUMER_KEY=ck_3e02102b4e08f0d34d074d7b982477de9b7621c3
+WC_CONSUMER_SECRET=cs_93e35c78ed252c732c89da30215e8e7a42aeba60
+WC_BASE_URL=http://localhost/wordpress-ecommerce
+
 
 Eseguire le migration:
 
@@ -97,70 +153,199 @@ npm run dev
 Aprire nel browser:
 
 http://127.0.0.1:8000
-Funzionalità
-Autenticazione e ruoli
-accesso riservato agli utenti autenticati;
-operatore: gestione ordini e clienti;
-amministratore: gestione utenti.
-Ordini
-sincronizzazione da WooCommerce;
-lista ordini;
-dettaglio ordine con:
-cliente
-prodotti
-totale
-stato
-data
-Clienti
-lista clienti;
-dettaglio cliente;
-indirizzo di fatturazione e spedizione;
-visualizzazione ordini collegati.
-Utenti
-visibili solo all’amministratore;
-lista utenti;
-dettaglio utente con ruolo.
-Sincronizzazione WooCommerce
 
-Gli ordini vengono sincronizzati tramite:
+
+FUNZIONALITA DELL'ESERCIZIO IN BASE ALLA CHALLENGE:
+
+Il progetto consiste nella realizzazione di una web application PHP sviluppata con Laravel per la gestione degli ordini WooCommerce e dell’anagrafica clienti.
+
+L’applicazione comunica con WooCommerce tramite REST API e mantiene una copia locale dei dati all’interno del database Laravel.
+
+---
+
+# Gestione autenticazione e ruoli
+
+L’accesso all’applicazione è consentito esclusivamente ad utenti autenticati.
+
+Sono stati implementati due ruoli:
+
+## Operatore
+
+L’utente operatore può:
+
+- accedere alla gestione ordini;
+- accedere all’anagrafica clienti;
+- visualizzare il dettaglio ordini;
+- modificare lo stato degli ordini.
+
+## Amministratore
+
+L’utente amministratore può:
+
+- accedere alla gestione utenti dell’applicazione;
+- visualizzare l’elenco utenti;
+- visualizzare il dettaglio utenti.
+
+La separazione dei ruoli è gestita tramite middleware Laravel.
+
+---
+
+# Integrazione con WooCommerce
+
+L’integrazione con WooCommerce è stata sviluppata tramite il service:
+
+```text
+app/Services/WooCommerceService.php
+S
+Il service gestisce:
+
+autenticazione API WooCommerce;
+recupero ordini;
+recupero singolo ordine;
+aggiornamento stato ordine.
+
+Le richieste API vengono effettuate tramite REST API WooCommerce usando OAuth 1.0.
+
+Download ordini WooCommerce
+
+L’applicazione scarica gli ordini da WooCommerce tramite una rotta dedicata:
 
 /sync-ordini
 
 La sincronizzazione:
 
-recupera ordini in stato processing;
-crea o aggiorna il cliente;
-salva l’ordine;
+recupera gli ordini WooCommerce;
+salva gli ordini nel database locale;
+crea o aggiorna i clienti;
 salva le righe ordine;
-evita duplicazioni.
-Struttura database
-clienti
-id
-nome
-cognome
-email
-indirizzo_fatturazione
-indirizzo_spedizione
-ordini
-id (uguale a WooCommerce)
-cliente_id
-totale
-stato
-data_ordine
-righe_ordine
-id
+mantiene le relazioni tra cliente e ordini.
+
+Per evitare duplicazioni è stato utilizzato:
+
+updateOrCreate()
+Gestione clienti
+
+Durante la sincronizzazione:
+
+se il cliente non esiste viene creato;
+se il cliente esiste viene aggiornato.
+
+Il cliente viene identificato tramite email.
+
+Per ogni cliente vengono salvati:
+
+nome;
+cognome;
+email;
+indirizzo di fatturazione;
+indirizzo di spedizione.
+Relazione cliente - ordini
+
+È stata implementata la relazione:
+
+1 cliente → molti ordini
+
+tramite chiave esterna:
+
+ordini.cliente_id
+
+In questo modo uno stesso cliente può avere più ordini associati.
+
+Gestione ordini
+
+La web application permette di visualizzare:
+
+elenco ordini;
+dettaglio ordine;
+righe ordine;
+dati cliente;
+stato ordine;
+totale ordine;
+data ordine;
+indirizzi di fatturazione e spedizione.
+
+È stata inoltre implementata una sezione filtri per:
+
+nome cliente;
+stato ordine.
+Gestione righe ordine
+
+Per ogni ordine vengono salvati:
+
+prodotto;
+quantità;
+prezzo.
+
+Le righe ordine vengono memorizzate nella tabella:
+
+righe_ordini
+
+collegate all’ordine tramite:
+
 ordine_id
-prodotto
-quantita
-prezzo
-Note
+Gestione stato ordine (Opzionale A)
 
-Il progetto utilizza:
+È stata implementata anche la funzionalità opzionale di aggiornamento stato ordine.
 
-architettura MVC (Laravel);
-Eloquent ORM per le relazioni;
-un service dedicato per l’integrazione WooCommerce;
-sincronizzazione idempotente per evitare duplicati.
-Autore
+L’utente operatore può modificare lo stato di un ordine scegliendo tra:
 
-Alessandro Agnello
+completed
+cancelled
+refunded
+
+Quando lo stato viene aggiornato:
+
+il database Laravel viene aggiornato;
+viene inviata una richiesta API PUT a WooCommerce;
+lo stato viene aggiornato anche lato WordPress/WooCommerce.
+
+In questo modo il database locale e WooCommerce restano sincronizzati.
+
+Framework MVC scelto
+
+Per il progetto è stato utilizzato Laravel.
+
+La struttura segue il pattern MVC:
+
+Models
+
+Gestiscono:
+
+dati database;
+relazioni Eloquent.
+Controllers
+
+Gestiscono:
+
+logica applicativa;
+sincronizzazione;
+filtri;
+aggiornamento stato ordini.
+Views Blade
+
+Gestiscono:
+
+dashboard;
+lista ordini;
+dettaglio ordini;
+gestione clienti;
+gestione utenti.
+Architettura generale
+
+Il flusso principale dell’applicazione è:
+
+WooCommerce API
+        ↓
+WooCommerceService
+        ↓
+WooCommerceOrderController
+        ↓
+Database Laravel
+        ↓
+OrdineController / ClienteController
+        ↓
+View Blade
+
+WooCommerce rappresenta la sorgente dati esterna.
+
+Laravel mantiene una copia locale sincronizzata e fornisce il backoffice gestionale.
